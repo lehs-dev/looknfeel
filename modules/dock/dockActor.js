@@ -8,6 +8,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as AppFavorites from 'resource:///org/gnome/shell/ui/appFavorites.js';
 import Clutter from 'gi://Clutter';
 import GObject from 'gi://GObject';
+import Meta from 'gi://Meta';
 import St from 'gi://St';
 
 import { Dash } from 'resource:///org/gnome/shell/ui/dash.js';
@@ -525,13 +526,31 @@ export const DockActor = GObject.registerClass(
                 }
                 if (focused) {
                     try {
-                        for (const w of app.get_windows())
+                        // Icon geometry lets the lamp module target the
+                        // minimize effect at this dock icon.
+                        const rect = this._iconGeometry(container);
+                        for (const w of app.get_windows()) {
+                            if (rect)
+                                w.set_icon_geometry(rect);
                             w.minimize();
+                        }
                     } catch {
                         /* ignore */
                     }
                 }
             };
+        }
+
+        // Stage-space rectangle of a dock icon, for minimize-effect targeting.
+        _iconGeometry(container) {
+            if (!container?.get_transformed_position)
+                return null;
+            const [x, y] = container.get_transformed_position();
+            return new Meta.Rectangle({
+                x: Math.round(x), y: Math.round(y),
+                width: Math.round(container.width),
+                height: Math.round(container.height),
+            });
         }
 
         _onIconScroll(appwell, evt) {
