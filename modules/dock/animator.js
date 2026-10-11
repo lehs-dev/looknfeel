@@ -314,6 +314,21 @@ export class Animator {
         // Draw the renderers.
         const renderOffset = dock.renderArea.get_transformed_position();
         const unscaled = iconSize * scaleFactor;
+        // TEMP-DEBUG (debug-dock branch only)
+        this._dbgFrames = (this._dbgFrames || 0) + 1;
+        if (this._dbgFrames === 30 || this._dbgFrames % 600 === 0) {
+            const e0 = icons[0];
+            const s0 = e0?.icon;
+            const r0 = this._renderers[0];
+            log(`DBG frame=${this._dbgFrames} icons=${icons.length} ` +
+                `renderers=${this._renderers.length} renderAreaOpacity=${dock.renderArea.opacity} ` +
+                `renderAreaVisible=${dock.renderArea.visible} ` +
+                `src0=${s0 ? `gicon=${!!s0.gicon} icon_name=${s0.icon_name}` : 'none'} ` +
+                `r0=${r0 ? `vis=${r0.visible} op=${r0.opacity} ` +
+                    `x=${Math.round(r0.x)} y=${Math.round(r0.y)} ` +
+                    `w=${Math.round(r0.width)} scale=${r0.scaleX.toFixed(2)} ` +
+                    `gicon=${!!r0.gicon} icon_name=${r0.icon_name}` : 'none'}`);
+        }
         for (const entry of icons) {
             const renderer = this._renderers[entry._idx];
             entry._renderer = renderer;
