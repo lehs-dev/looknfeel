@@ -329,6 +329,7 @@ export class Animator {
                     `w=${Math.round(r0.width)} scale=${r0.scaleX.toFixed(2)} ` +
                     `gicon=${!!r0.gicon} icon_name=${r0.icon_name}` : 'none'}`);
         }
+        dock._beginAppWidgets();
         for (const entry of icons) {
             const renderer = this._renderers[entry._idx];
             entry._renderer = renderer;
@@ -428,6 +429,9 @@ export class Animator {
                 dots.place(renderer.x, renderer.y, rSize, entry._scale);
                 dots.visible = true;
             }
+
+            // Live clock/calendar widget replaces the static renderer.
+            dock._updateAppWidgets(entry, renderer);
         }
 
         // Reveal when the pointer reaches a hidden dock.
@@ -486,6 +490,7 @@ export class Animator {
                 containerH: dock.height,
                 iconSize,
                 scaleFactor,
+                dockPadding: settings.getDouble('dock-padding'),
             });
         } else {
             dock._background.opacity = 0;

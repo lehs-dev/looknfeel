@@ -322,6 +322,14 @@
   <default>true</default>
   <summary>Show the applications-grid icon in the dock</summary>
 </key>
+<key name="dock-clock-widget" type="b">
+  <default>true</default>
+  <summary>Replace the Clocks app icon with a live analog clock</summary>
+</key>
+<key name="dock-calendar-widget" type="b">
+  <default>true</default>
+  <summary>Replace the Calendar app icon with a live date tile</summary>
+</key>
 <key name="dock-favorites-only" type="b">
   <default>false</default>
   <summary>Only show favorite apps in the dock</summary>
@@ -329,6 +337,10 @@
 <key name="dock-background-color" type="s">
   <default>'transparent'</default>
   <summary>Dock background color as a CSS rgba() string</summary>
+</key>
+<key name="dock-padding" type="d">
+  <default>0.55</default>
+  <summary>Padding around the icons inside the dock background, as a fraction</summary>
 </key>
 <key name="dock-border-radius" type="i">
   <default>18</default>
@@ -421,7 +433,7 @@
   <summary>Modifier held while dragging to tile: none, ctrl, alt, super</summary>
 </key>
 <key name="tiling-deactivation-key" type="s">
-  <default>'ctrl'</default>
+  <default>'none'</default>
   <summary>Modifier held while dragging to suppress tiling</summary>
 </key>
 <key name="tiling-span-multiple-tiles" type="b">

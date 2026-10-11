@@ -5,10 +5,10 @@
 
 import Gio from 'gi://Gio';
 import Meta from 'gi://Meta';
-import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {SignalManager} from '../../shared/signals.js';
 import {ModuleSettings} from '../../shared/settings.js';
+import {getWorkAreaForMonitor} from '../../shared/workarea.js';
 import {log} from '../../shared/logger.js';
 
 import {KeybindingManager} from './keybindings.js';
@@ -150,7 +150,7 @@ export class TilingModule {
             return;
         const monitor = window.get_monitor();
         this._tileWindow(window, tile,
-            Main.layoutManager.getWorkAreaForMonitor(monitor), monitor);
+            getWorkAreaForMonitor(monitor), monitor);
     }
 
     _onKeyboardMove(direction) {
@@ -172,7 +172,7 @@ export class TilingModule {
             return;
         }
         const monitor = window.get_monitor();
-        const workArea = Main.layoutManager.getWorkAreaForMonitor(monitor);
+        const workArea = getWorkAreaForMonitor(monitor);
         const tile = findTileInDirection(allTiles(), workArea,
             window.get_frame_rect(), direction);
         if (!tile) {
@@ -184,7 +184,7 @@ export class TilingModule {
                 return;
             }
             const neighborWorkArea =
-                Main.layoutManager.getWorkAreaForMonitor(neighbor);
+                getWorkAreaForMonitor(neighbor);
             const neighborTile = findTileInDirection(allTiles(),
                 neighborWorkArea, window.get_frame_rect(), direction) ??
                 allTiles()[0];

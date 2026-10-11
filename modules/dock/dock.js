@@ -16,12 +16,12 @@ const STRUCTURAL_KEYS = [
     'dock-location', 'dock-multi-monitor', 'dock-autohide',
     'dock-dodge-windows', 'dock-panel-mode', 'dock-show-trash',
     'dock-show-mounts', 'dock-show-apps-icon', 'dock-favorites-only',
-    'dock-blur-background',
+    'dock-blur-background', 'dock-clock-widget', 'dock-calendar-widget',
 ];
 // Changes that only need a relayout + background restyle.
 const LAYOUT_KEYS = [
     'dock-icon-size', 'dock-icon-spacing', 'dock-edge-distance',
-    'dock-background-color', 'dock-border-radius',
+    'dock-background-color', 'dock-padding', 'dock-border-radius',
     'dock-blur-radius', 'dock-blur-brightness',
 ];
 

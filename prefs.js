@@ -195,12 +195,17 @@ export default class LooknFeelPreferences extends ExtensionPreferences {
             _switchRow(s, 'dock-show-trash', 'Show trash'),
             _switchRow(s, 'dock-show-mounts', 'Show mounted volumes'),
             _switchRow(s, 'dock-show-apps-icon', 'Show applications icon'),
+            _switchRow(s, 'dock-clock-widget', 'Live clock',
+                'Replace the Clocks icon with an analog clock'),
+            _switchRow(s, 'dock-calendar-widget', 'Live calendar',
+                'Replace the Calendar icon with a date tile'),
         ]);
         _group(page, 'Appearance', [
             _doubleSpinRow(s, 'dock-icon-size', 'Icon size', '', 0.5, 2, 0.05),
             _doubleSpinRow(s, 'dock-icon-spacing', 'Icon spacing', '', 0, 1, 0.05),
             _doubleSpinRow(s, 'dock-edge-distance', 'Edge distance', 'Distance from the screen edge, in px', 0, 64, 1),
             _entryRow(s, 'dock-background-color', 'Background color', 'CSS color, e.g. rgba(20,20,25,0.65)'),
+            _doubleSpinRow(s, 'dock-padding', 'Background padding', 'Space around the icons inside the background', 0, 2, 0.05),
             _intSpinRow(s, 'dock-border-radius', 'Corner radius', '', 0, 40, 1),
             _switchRow(s, 'dock-blur-background', 'Blur background'),
             _intSpinRow(s, 'dock-blur-radius', 'Blur radius', '', 1, 100, 1),

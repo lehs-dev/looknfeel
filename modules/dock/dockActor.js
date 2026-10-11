@@ -18,6 +18,9 @@ import { AutoHide } from './autohide.js';
 import {
     DockBackground, TrashIcon, MountIcon, ShowAppsIcon,
 } from './dockItems.js';
+import { ClockWidget } from './widgets/clock.js';
+import { CalendarWidget } from './widgets/calendar.js';
+import { matchAppWidget } from './widgets/appWidgets.js';
 import {
     getDashBox, hideDashBackground, hideShowAppsIcon, patchDash,
     getStIconFromAppwell, getAppwellDot, getContainerLabel, getFavoriteIds,
@@ -89,6 +92,19 @@ export const DockActor = GObject.registerClass(
             });
             this.add_child(this.renderArea);
 
+            this._clockWidget = null;
+            this._calendarWidget = null;
+            if (settings.getBoolean('dock-clock-widget')) {
+                this._clockWidget = new ClockWidget();
+                this._clockWidget.visible = false;
+                this.renderArea.add_child(this._clockWidget);
+            }
+            if (settings.getBoolean('dock-calendar-widget')) {
+                this._calendarWidget = new CalendarWidget();
+                this._calendarWidget.visible = false;
+                this.renderArea.add_child(this._calendarWidget);
+            }
+
             this._struts = new St.Widget({ name: 'looknfeelDockStruts' });
             this._dwell = new St.Widget({
                 name: 'looknfeelDockDwell',
@@ -129,6 +145,9 @@ export const DockActor = GObject.registerClass(
             for (const icon of this._customIcons)
                 icon.destroy();
             this._customIcons = [];
+            // Live widgets are renderArea children, destroyed with it below.
+            this._clockWidget = null;
+            this._calendarWidget = null;
             this._signals.disconnectAll();
             try {
                 this._blurModule.unblurActor(this._background);
@@ -626,6 +645,37 @@ export const DockActor = GObject.registerClass(
             if (app?.get_n_windows && app.get_n_windows() !== 0 && !entry.custom)
                 return;
             this._animator.bounceIcon(entry);
+        }
+
+        // ---------- live app widgets (clock/calendar) ----------
+
+        // Hidden at the start of every animation frame; re-shown below for
+        // the matching icon, if any. Same-frame hide/show, no flicker.
+        _beginAppWidgets() {
+            this._clockWidget?.hideWidget();
+            this._calendarWidget?.hideWidget();
+        }
+
+        // Overlay the live widget on a matching app icon and hide the
+        // static renderer underneath. Both widgets always replace the
+        // icon (upstream shouldHideIcon is unconditionally true).
+        _updateAppWidgets(entry, renderer) {
+            const kind = matchAppWidget(entry);
+            const widget = kind === 'clock' ? this._clockWidget
+                : kind === 'calendar' ? this._calendarWidget : null;
+            if (!widget)
+                return;
+            widget.sync();
+            const size = renderer.width * renderer.scaleX;
+            if (!(size > 0))
+                return;
+            const canvasSize = widget._canvas.width || 120;
+            widget.set_size(size, size);
+            widget._canvas.set_scale(size / canvasSize, size / canvasSize);
+            widget.set_position(renderer.x, renderer.y);
+            widget.opacity = 255;
+            widget.visible = true;
+            renderer.opacity = 0;
         }
 
         // ---------- animation driver ----------

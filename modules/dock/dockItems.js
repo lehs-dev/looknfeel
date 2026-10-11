@@ -36,13 +36,13 @@ export const DockBackground = GObject.registerClass(
                 firstTx, firstTy, lastTx, lastTy,
                 dashX, dashY, dashW, dashH,
                 vertical, panelMode, containerW, containerH,
-                iconSize, scaleFactor,
+                iconSize, scaleFactor, dockPadding = 0.5,
             } = p;
             if (firstTx === undefined || dashW <= 0 || dashH <= 0) {
                 this.opacity = 0;
                 return;
             }
-            const padding = iconSize * 0.05 * scaleFactor;
+            const padding = iconSize * 0.1 * dockPadding * scaleFactor;
             let x = dashX, y = dashY, w = dashW, h = dashH;
             if (vertical) {
                 y += firstTy;

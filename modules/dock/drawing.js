@@ -6,21 +6,84 @@ import Cairo from 'gi://cairo';
 import Clutter from 'gi://Clutter';
 import Cogl from 'gi://Cogl';
 import GObject from 'gi://GObject';
+import Pango from 'gi://Pango';
+import PangoCairo from 'gi://PangoCairo';
 import St from 'gi://St';
 
-function setColor(ctx, color, alpha) {
-    let r = 1, g = 1, b = 1;
-    const norm = v => (v > 1 ? v / 255 : v);
-    if (typeof color === 'string') {
-        const [, cc] = (Cogl?.Color.from_string || Clutter.Color.from_string)(color);
-        r = norm(cc.red); g = norm(cc.green); b = norm(cc.blue);
-    } else if (color.red !== undefined) {
-        r = norm(color.red); g = norm(color.green); b = norm(color.blue);
-    } else if (Array.isArray(color)) {
-        [r, g, b] = color;
-    }
-    ctx.setSourceRGBA(r, g, b, alpha ?? color?.[3] ?? 1);
-}
+// Canvas helpers for the live clock/calendar app widgets. Drawing routines
+// adapted from dash2dock-lite by icedman (GPL-2.0-or-later).
+export const Drawing = {
+    set_color(ctx, clr, alpha) {
+        if (typeof clr === 'string') {
+            const [, cc] = (Cogl?.Color.from_string || Clutter.Color.from_string)(clr);
+            ctx.setSourceRGBA(cc.red, cc.green, cc.blue, alpha);
+        } else if (clr.red) {
+            ctx.setSourceRGBA(clr.red, clr.green, clr.blue, alpha);
+        } else {
+            ctx.setSourceRGBA(clr[0], clr[1], clr[2], alpha);
+        }
+    },
+
+    draw_rotated_line(ctx, color, width, angle, len, offset) {
+        offset = offset || 0;
+        ctx.save();
+        ctx.rotate(angle);
+        Drawing.set_color(ctx, color, 1);
+        ctx.setLineWidth(width);
+        ctx.moveTo(0, offset);
+        ctx.lineTo(0, len);
+        ctx.stroke();
+        ctx.restore();
+    },
+
+    draw_circle(ctx, color, x, y, diameter, line_width) {
+        ctx.save();
+        Drawing.set_color(ctx, color, 1);
+        ctx.arc(x, y, diameter / 2 - diameter / 20, 0, 2 * Math.PI);
+        ctx.setLineWidth(line_width || 0);
+        if (line_width > 0)
+            ctx.stroke();
+        else
+            ctx.fill();
+        ctx.restore();
+    },
+
+    draw_rounded_rect(ctx, color, x, y, h_size, v_size, line_width, border_radius) {
+        ctx.save();
+        Drawing.set_color(ctx, color, 1);
+        ctx.translate(x, y);
+        ctx.setLineWidth(line_width || 0);
+        ctx.moveTo(border_radius, 0);
+        ctx.lineTo(h_size - border_radius, 0);
+        ctx.curveTo(h_size - border_radius, 0, h_size, 0, h_size, border_radius);
+        ctx.lineTo(h_size, v_size - border_radius);
+        ctx.curveTo(h_size, v_size - border_radius, h_size, v_size,
+            h_size - border_radius, v_size);
+        ctx.lineTo(border_radius, v_size);
+        ctx.curveTo(border_radius, v_size, 0, v_size, 0, v_size - border_radius);
+        ctx.lineTo(0, border_radius);
+        ctx.curveTo(0, border_radius, 0, 0, border_radius, 0);
+        if (line_width == 0)
+            ctx.fill();
+        else
+            ctx.stroke();
+        ctx.restore();
+    },
+
+    draw_text(ctx, showtext, font = 'DejaVuSans 42') {
+        ctx.save();
+        const pl = PangoCairo.create_layout(ctx);
+        pl.set_text(showtext, -1);
+        pl.set_font_description(Pango.FontDescription.from_string(font));
+        PangoCairo.update_layout(ctx, pl);
+        const [w, h] = pl.get_pixel_size();
+        ctx.relMoveTo(-w / 2, -h / 2);
+        PangoCairo.show_layout(ctx, pl);
+        ctx.relMoveTo(w / 2, 0);
+        ctx.restore();
+        return [w, h];
+    },
+};
 
 export const Dot = GObject.registerClass(
     { GTypeName: 'LooknFeelDot' },
@@ -96,7 +159,7 @@ const DotCanvas = GObject.registerClass(
 
         _fillShapes(ctx, state) {
             ctx.strokePreserve();
-            setColor(ctx, state.color, state.color[3]);
+            Drawing.set_color(ctx, state.color, state.color[3]);
             ctx.fill();
         }
 

@@ -7,9 +7,9 @@
 import Clutter from 'gi://Clutter';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
-import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {SignalManager} from '../../shared/signals.js';
+import {getWorkAreaForMonitor} from '../../shared/workarea.js';
 import {log} from '../../shared/logger.js';
 import {allTiles, tileAtPoint, tileToRect, tileWindowRect, unionTiles} from './layouts.js';
 import {TilePreview} from './preview.js';
@@ -105,8 +105,14 @@ export class DragTiling {
             return false;
         const activated = this._keyActive(modifier,
             this._settings.getString('tiling-activation-key'));
-        const deactivated = this._keyActive(modifier,
-            this._settings.getString('tiling-deactivation-key'));
+        // 'none' means "no deactivation key": never deactivated (upstream:
+        // deactivationKey === NONE ? false : keyActive). _keyActive('none')
+        // is true (no key required), which is only correct for activation.
+        const deactivationKey =
+            this._settings.getString('tiling-deactivation-key');
+        const deactivated = deactivationKey === 'none'
+            ? false
+            : this._keyActive(modifier, deactivationKey);
         return activated && !deactivated;
     }
 
@@ -127,8 +133,7 @@ export class DragTiling {
         const window = this._grabWindow;
         if (!window)
             return;
-        const workArea = Main.layoutManager.getWorkAreaForMonitor(
-            window.get_monitor());
+        const workArea = getWorkAreaForMonitor(window.get_monitor());
         const [x, y, modifier] = global.get_pointer();
         if (!this._grabStart)
             this._grabStart = {x, y};
@@ -216,8 +221,7 @@ export class DragTiling {
         }
         if (!tile)
             return;
-        const workArea = Main.layoutManager.getWorkAreaForMonitor(
-            window.get_monitor());
+        const workArea = getWorkAreaForMonitor(window.get_monitor());
         window.originalSize = window.get_frame_rect().copy();
         window.assignedTile = {...tile};
         const rect = tileWindowRect(tile, workArea,
