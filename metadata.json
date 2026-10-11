@@ -3,6 +3,6 @@
     "name": "LooknFeel",
     "description": "All-in-one personal GNOME Shell extension: blur effects, animated dock and UI tweaks in a single package.",
     "shell-version": ["50", "51"],
-    "version": 1,
+    "version": 2,
     "url": "https://github.com/lehs-dev/looknfeel"
 }

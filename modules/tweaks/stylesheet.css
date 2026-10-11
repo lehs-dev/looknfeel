@@ -1,0 +1,27 @@
+/* LooknFeel tweaks stylesheet — phase 1 rules only.
+   Tweak logic adapted from just-perfection by JustPerfection (GPL-3.0). */
+
+/* overview search entry hidden: reclaim its layout space */
+.lfn-no-search #overview {
+    spacing: 0;
+}
+
+.lfn-no-search .overview-controls {
+    padding-top: 36px;
+    padding-bottom: 36px;
+}
+
+/* ripple-box animation disabled */
+.lfn-no-ripple-box .ripple-box {
+    background-color: transparent;
+}
+
+/* window preview caption hidden */
+.lfn-no-window-caption .window-caption {
+    spacing: 0;
+    background-color: transparent;
+    border-radius: 0;
+    border: 0;
+    padding: 0;
+    font-size: 0;
+}

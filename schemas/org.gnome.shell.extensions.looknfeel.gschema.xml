@@ -27,5 +27,205 @@
   <summary>Panel blur brightness</summary>
 </key>
 
+<!-- Tweaks module (phase 1 core subset, adapted from just-perfection) -->
+<key name="tweaks-activities-button" type="b">
+  <default>true</default>
+  <summary>Show the Activities button</summary>
+</key>
+<key name="tweaks-clock-menu" type="b">
+  <default>true</default>
+  <summary>Show the clock/date menu</summary>
+</key>
+<key name="tweaks-keyboard-layout" type="b">
+  <default>true</default>
+  <summary>Show the keyboard layout indicator</summary>
+</key>
+<key name="tweaks-accessibility-menu" type="b">
+  <default>true</default>
+  <summary>Show the accessibility menu</summary>
+</key>
+<key name="tweaks-quick-settings" type="b">
+  <default>true</default>
+  <summary>Show the quick settings menu</summary>
+</key>
+<key name="tweaks-panel" type="b">
+  <default>true</default>
+  <summary>Show the top panel</summary>
+</key>
+<key name="tweaks-top-panel-position" type="i">
+  <default>0</default>
+  <summary>Panel position: 0 = top, 1 = bottom</summary>
+</key>
+<key name="tweaks-panel-size" type="i">
+  <default>0</default>
+  <summary>Panel height in px, 0 = automatic</summary>
+</key>
+<key name="tweaks-clock-menu-position" type="i">
+  <default>0</default>
+  <summary>Clock position: 0 = center, 1 = right, 2 = left</summary>
+</key>
+<key name="tweaks-clock-menu-position-offset" type="i">
+  <default>0</default>
+  <summary>Clock offset within its panel box</summary>
+</key>
+<key name="tweaks-search" type="b">
+  <default>true</default>
+  <summary>Show the overview search entry</summary>
+</key>
+<key name="tweaks-type-to-search" type="b">
+  <default>true</default>
+  <summary>Enable type-to-search in overview</summary>
+</key>
+<key name="tweaks-animation" type="i">
+  <default>1</default>
+  <summary>Animation speed: 0 = off, 1 = default, 2-8 = speed steps</summary>
+</key>
+<key name="tweaks-window-maximized-on-create" type="b">
+  <default>false</default>
+  <summary>Maximize new windows on creation</summary>
+</key>
+<key name="tweaks-window-demands-attention-focus" type="b">
+  <default>false</default>
+  <summary>Focus windows demanding attention instead of only marking them urgent</summary>
+</key>
+<key name="tweaks-workspace-wrap-around" type="b">
+  <default>false</default>
+  <summary>Wrap around when switching workspaces past the first/last one</summary>
+</key>
+<key name="tweaks-workspace-popup" type="b">
+  <default>true</default>
+  <summary>Show the workspace switcher popup</summary>
+</key>
+<key name="tweaks-startup-status" type="i">
+  <default>1</default>
+  <summary>Show on login: 0 = desktop, 1 = overview</summary>
+</key>
+<key name="tweaks-notification-banner-position" type="i">
+  <default>1</default>
+  <summary>Notification banner position on a 3x3 grid (1 = top center)</summary>
+</key>
+<key name="tweaks-osd" type="b">
+  <default>true</default>
+  <summary>Show the on-screen display (volume/brightness)</summary>
+</key>
+<key name="tweaks-osd-position" type="i">
+  <default>0</default>
+  <summary>OSD position on a 3x3 grid, 0 = default</summary>
+</key>
+<key name="tweaks-overlay-key" type="b">
+  <default>true</default>
+  <summary>Super key opens the overview</summary>
+</key>
+<key name="tweaks-ripple-box" type="b">
+  <default>true</default>
+  <summary>Show the unlock ripple animation</summary>
+</key>
+<key name="tweaks-window-preview-caption" type="b">
+  <default>true</default>
+  <summary>Show window titles in the overview</summary>
+</key>
+
+<!-- Dock module (phase 1, ported from dash2dock-lite) -->
+<key name="dock-location" type="i">
+  <default>0</default>
+  <summary>Dock position: 0 = bottom, 1 = left, 2 = right, 3 = top</summary>
+</key>
+<key name="dock-multi-monitor" type="i">
+  <default>0</default>
+  <summary>Show dock on: 0 = primary monitor only, 1 = all monitors</summary>
+</key>
+<key name="dock-autohide" type="b">
+  <default>false</default>
+  <summary>Autohide the dock, reveal on screen-edge dwell</summary>
+</key>
+<key name="dock-dodge-windows" type="b">
+  <default>false</default>
+  <summary>Intellihide: hide the dock when a window overlaps it</summary>
+</key>
+<key name="dock-pressure-sense" type="b">
+  <default>false</default>
+  <summary>Only the outermost screen-edge pixel reveals a hidden dock</summary>
+</key>
+<key name="dock-icon-size" type="d">
+  <default>1.0</default>
+  <summary>Dock icon size scale</summary>
+</key>
+<key name="dock-icon-spacing" type="d">
+  <default>0.15</default>
+  <summary>Spacing between dock icons</summary>
+</key>
+<key name="dock-edge-distance" type="d">
+  <default>8.0</default>
+  <summary>Distance from the screen edge in px</summary>
+</key>
+<key name="dock-panel-mode" type="b">
+  <default>false</default>
+  <summary>Stretch the dock background across the whole screen edge</summary>
+</key>
+<key name="dock-animate" type="b">
+  <default>true</default>
+  <summary>Animate icons on hover (magnification)</summary>
+</key>
+<key name="dock-magnify" type="d">
+  <default>0.5</default>
+  <summary>Icon magnification amount on hover</summary>
+</key>
+<key name="dock-spread" type="d">
+  <default>0.5</default>
+  <summary>How much magnified icons push their neighbors aside</summary>
+</key>
+<key name="dock-rise" type="d">
+  <default>0.35</default>
+  <summary>How much magnified icons rise off the dock</summary>
+</key>
+<key name="dock-rise-curve" type="i">
+  <default>0</default>
+  <summary>Magnification easing curve: 0 = quadratic, 1 = cubic</summary>
+</key>
+<key name="dock-bounce-on-launch" type="b">
+  <default>true</default>
+  <summary>Bounce the icon when launching an app</summary>
+</key>
+<key name="dock-show-trash" type="b">
+  <default>true</default>
+  <summary>Show the trash icon in the dock</summary>
+</key>
+<key name="dock-show-mounts" type="b">
+  <default>true</default>
+  <summary>Show mounted volumes in the dock</summary>
+</key>
+<key name="dock-show-apps-icon" type="b">
+  <default>true</default>
+  <summary>Show the applications-grid icon in the dock</summary>
+</key>
+<key name="dock-favorites-only" type="b">
+  <default>false</default>
+  <summary>Only show favorite apps in the dock</summary>
+</key>
+<key name="dock-background-color" type="s">
+  <default>'rgba(20,20,25,0.65)'</default>
+  <summary>Dock background color as a CSS rgba() string</summary>
+</key>
+<key name="dock-border-radius" type="i">
+  <default>18</default>
+  <summary>Dock background corner radius in px</summary>
+</key>
+<key name="dock-blur-background" type="b">
+  <default>true</default>
+  <summary>Blur behind the dock background</summary>
+</key>
+<key name="dock-blur-radius" type="i">
+  <default>30</default>
+  <summary>Dock background blur radius</summary>
+</key>
+<key name="dock-blur-brightness" type="d">
+  <default>0.6</default>
+  <summary>Dock background blur brightness</summary>
+</key>
+<key name="dock-running-indicator-style" type="i">
+  <default>0</default>
+  <summary>Running-app indicator style index</summary>
+</key>
+
   </schema>
 </schemalist>

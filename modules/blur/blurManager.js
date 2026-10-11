@@ -7,6 +7,7 @@ import {PanelBlur} from './components/panel.js';
 
 export class BlurModule {
     constructor(settings) {
+        this._rawSettings = settings;
         this._settings = new ModuleSettings(settings);
         this._signals = new SignalManager();
         this._components = [new PanelBlur(this._settings, this._signals)];
@@ -14,13 +15,15 @@ export class BlurModule {
     }
 
     enable() {
+        // Đăng ký listener TRƯỚC khi check, để toggle trong prefs luôn có tác dụng
+        // kể cả khi blur đang tắt lúc khởi động
+        this._settings.onChanged('blur-enabled', () => this._reload());
         if (!this._settings.getBoolean('blur-enabled')) {
             log('Blur module disabled by setting, skipping');
             return;
         }
         for (const component of this._components)
             component.enable();
-        this._settings.onChanged('blur-enabled', () => this._reload());
         log('Blur module enabled');
     }
 
@@ -38,6 +41,8 @@ export class BlurModule {
 
     _reload() {
         this.disable();
+        // disable() đã destroy ModuleSettings cũ → bọc lại từ settings gốc
+        this._settings = new ModuleSettings(this._rawSettings);
         this.enable();
     }
 
