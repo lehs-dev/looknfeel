@@ -2,9 +2,12 @@
 // window will land. Adapted from Tiling Shell's tilePreview.js by Domenico
 // Ferraro (GPL-3.0-or-later).
 
+import GObject from 'gi://GObject';
 import St from 'gi://St';
 
-export class TilePreview extends St.Widget {
+export const TilePreview = GObject.registerClass(
+    { GTypeName: 'LooknFeelTilePreview' },
+    class TilePreview extends St.Widget {
     constructor() {
         super({
             reactive: false,
@@ -24,4 +27,4 @@ export class TilePreview extends St.Widget {
     hidePreview() {
         this.hide();
     }
-}
+});
