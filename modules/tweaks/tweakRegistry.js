@@ -1,4 +1,4 @@
-// tweakRegistry — declarative table of the 24 phase-1 tweaks.
+// tweakRegistry — declarative table of the 46 tweaks (24 phase-1 + 22 phase-2).
 // Each entry: { key, type: 'b'|'i', default (stock GNOME value),
 //   apply(api, value, settings), revert(api) }.
 // apply() handles only the non-stock branch; revert() forces stock state and
@@ -6,16 +6,21 @@
 // Tweak logic adapted from just-perfection by JustPerfection (GPL-3.0).
 
 import Clutter from 'gi://Clutter';
+import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
 
+import * as BackgroundMenu from 'resource:///org/gnome/shell/ui/backgroundMenu.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 import * as OSDWindow from 'resource:///org/gnome/shell/ui/osdWindow.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as SearchController from 'resource:///org/gnome/shell/ui/searchController.js';
+import * as WindowMenu from 'resource:///org/gnome/shell/ui/windowMenu.js';
 import * as WindowPreview from 'resource:///org/gnome/shell/ui/windowPreview.js';
 import * as WorkspaceSwitcherPopup from 'resource:///org/gnome/shell/ui/workspaceSwitcherPopup.js';
+import * as WorkspaceThumbnail from 'resource:///org/gnome/shell/ui/workspaceThumbnail.js';
+import * as WorkspacesView from 'resource:///org/gnome/shell/ui/workspacesView.js';
 
 // 3x3 grid shared by tweaks-notification-banner-position / tweaks-osd-position
 const XY = {TOP_START: 0, TOP_CENTER: 1, TOP_END: 2,
@@ -219,6 +224,255 @@ let startupCompleteId = 0;
 // ---------- tweaks-animation ----------
 // index = value - 2 (values 2-8); matches upstream just-perfection
 const ANIMATION_FACTORS = [0.01, 0.2, 0.6, 0.8, 1.3, 1.6, 2.8];
+
+// ---------- shared "keep hidden" guard ----------
+// Actors that re-show themselves (quick-settings toggles, self-managing
+// panel indicators, clock-menu sections) get a 'show' signal guard that
+// re-hides them, mirroring just-perfection's approach. Guards are connected
+// through api.connectSignal, so TweaksModule.disable() always cleans them
+// up; unguardShow() drops one early for the revert half of _reapply().
+const showGuards = {};  // key -> {actor, id}
+
+function guardShow(api, key, actor) {
+    unguardShow(api, key);
+    if (!actor)
+        return;
+    showGuards[key] = {
+        actor,
+        id: api.connectSignal(actor, 'show', () => actor.hide()),
+    };
+}
+
+function unguardShow(api, key) {
+    const g = showGuards[key];
+    if (!g)
+        return;
+    api.disconnectSignal(g.actor, g.id);
+    delete showGuards[key];
+}
+
+// ---------- quick-settings feature toggles (entries 25-29) ----------
+// The toggles live at quickSettings._<feature>.quickSettingsItems[0]
+// (what just-perfection's #onQuickSettingsPropertyCall targets). All five
+// features are built synchronously in QuickSettings._init on GNOME 50, so
+// direct access is enough; the missing-actor guard covers odd sessions.
+function qsToggleApply(api, prop) {
+    const item = Main.panel.statusArea.quickSettings?.[prop]?.quickSettingsItems?.[0];
+    if (!item)
+        return;
+    api.saveValue(`qsToggleVisible:${prop}`, item.visible);
+    item.hide();
+    guardShow(api, `qs-toggle:${prop}`, item);
+}
+
+function qsToggleRevert(api, prop) {
+    const item = Main.panel.statusArea.quickSettings?.[prop]?.quickSettingsItems?.[0];
+    unguardShow(api, `qs-toggle:${prop}`);
+    const savedKey = `qsToggleVisible:${prop}`;
+    if (api.hasSaved(savedKey)) {
+        if (item && api.getSaved(savedKey))
+            item.show();
+        api.forgetSaved(savedKey);
+    }
+}
+
+// ---------- clock-menu sections that re-show via _sync() (entries 32, 33, 35) ----------
+// World clocks, weather and events reset their own visibility in _sync(),
+// so pin _sync to keep them hidden (just-perfection overrides _sync the
+// same way for world clocks) and re-run the stock _sync() on revert.
+function sectionApply(api, key, getItem) {
+    const item = getItem();
+    if (!item)
+        return;
+    api.patchOnce(`section:${key}`, item, '_sync', () => function () {
+        this.visible = false;
+    });
+    guardShow(api, `section:${key}`, item);
+    item._sync();
+}
+
+function sectionRevert(api, key, getItem) {
+    unguardShow(api, `section:${key}`);
+    api.restorePatched(`section:${key}`);
+    getItem()?._sync?.();
+}
+
+// ---------- panel indicators that manage their own visibility ----------
+// (screen sharing, screen recording, panel notification icon, power icon):
+// hide the real indicator actor and guard 'show'; revert drops the guard
+// and restores stock visibility through the indicator's own sync path.
+function indicatorApply(api, key, getIndicator) {
+    const ind = getIndicator();
+    if (!ind)
+        return;
+    ind.hide();
+    guardShow(api, `indicator:${key}`, ind);
+}
+
+function indicatorRevert(api, key, getIndicator, resync) {
+    unguardShow(api, `indicator:${key}`);
+    const ind = getIndicator();
+    if (ind)
+        resync(ind);
+}
+
+// ---------- overlay key + double-super-to-app-grid (entries 22, 45) ----------
+// One physical state driven by two keys, mirroring just-perfection's
+// Manager.#applyOverlayKey. GNOME 50's stock overlay-key handler already
+// turns a quick second Super press into the app grid; disabling
+// double-super blocks the stock handler and installs a plain
+// overview.toggle() instead; disabling the overlay key blocks Super
+// entirely. Both entries' apply() converge here from both settings; both
+// reverts tear down, then re-converge from the sibling's cached value so a
+// _reapply() of one key never clobbers the other's state. disable() is safe
+// regardless: its unblockAllSignals/disconnectAll safety nets restore stock.
+let overlayToggleId = 0;    // custom 'overlay-key' -> overview.toggle()
+let overlayKeyState = null; // {overlayOn, doubleSuper} from the last apply
+
+function overlayKeyConverge(api, overlayOn, doubleSuper) {
+    if (overlayToggleId) {
+        api.disconnectSignal(global.display, overlayToggleId);
+        overlayToggleId = 0;
+    }
+    if (overlayOn && doubleSuper) {
+        api.unblockSignal(global.display, 'overlay-key');
+    } else {
+        api.blockSignal(global.display, 'overlay-key');
+        if (overlayOn && !doubleSuper)
+            overlayToggleId = api.connectSignal(global.display, 'overlay-key',
+                () => Main.overview.toggle());
+    }
+}
+
+function overlayKeySync(api, settings) {
+    overlayKeyState = {
+        overlayOn: settings.getBoolean('tweaks-overlay-key'),
+        doubleSuper: settings.getBoolean('tweaks-double-super-to-app-grid'),
+    };
+    overlayKeyConverge(api, overlayKeyState.overlayOn, overlayKeyState.doubleSuper);
+}
+
+function overlayKeyRevert(api, selfKey) {
+    if (overlayToggleId) {
+        api.disconnectSignal(global.display, overlayToggleId);
+        overlayToggleId = 0;
+    }
+    api.unblockSignal(global.display, 'overlay-key');
+    if (overlayKeyState) {
+        // this key is back at stock; re-converge from the sibling's value
+        const overlayOn = selfKey === 'overlayKey' ? true : overlayKeyState.overlayOn;
+        const doubleSuper = selfKey === 'doubleSuper' ? true : overlayKeyState.doubleSuper;
+        overlayKeyState = {overlayOn, doubleSuper};
+        overlayKeyConverge(api, overlayOn, doubleSuper);
+    }
+}
+
+// ---------- tweaks-panel-in-overview (entry 41) ----------
+let panelOverviewIds = [];
+
+function panelInOverviewApply(api) {
+    if (panelOverviewIds.length)
+        return;
+    const panelBox = Main.layoutManager?.panelBox;
+    const overview = Main.overview;
+    if (!panelBox || !overview)
+        return;
+    panelOverviewIds = [
+        api.connectSignal(overview, 'showing', () => panelBox.hide()),
+        api.connectSignal(overview, 'hidden', () => panelBox.show()),
+    ];
+    if (overview.visible)
+        panelBox.hide();
+}
+
+function panelInOverviewRevert(api) {
+    const overview = Main.overview;
+    if (overview) {
+        for (const id of panelOverviewIds)
+            api.disconnectSignal(overview, id);
+    }
+    panelOverviewIds = [];
+    Main.layoutManager?.panelBox?.show();
+}
+
+// ---------- tweaks-window-picker-icon (entry 38) ----------
+// The app icon under each window preview (WindowPreview._icon, style class
+// 'window-icon'). Hide existing icons now; previews created later get their
+// icon hidden in a patched _init (just-perfection hides them with CSS).
+function windowPickerIcons() {
+    const icons = [];
+    const walk = actor => {
+        if (!(actor instanceof Clutter.Actor))
+            return;
+        if (actor.has_style_class_name?.('window-icon'))
+            icons.push(actor);
+        actor.get_children().forEach(walk);
+    };
+    if (Main.overview)
+        walk(Main.overview);
+    return icons;
+}
+
+// ---------- tweaks-invert-calendar-column-items (entry 46) ----------
+let calendarColumnInverted = false;
+
+function invertCalendarApply() {
+    if (calendarColumnInverted)
+        return;
+    const dateMenu = Main.panel.statusArea.dateMenu;
+    const calendar = dateMenu?._calendar;
+    const date = dateMenu?._date;
+    const eventsItem = dateMenu?._eventsItem;
+    const clocksItem = dateMenu?._clocksItem;
+    const weatherItem = dateMenu?._weatherItem;
+    if (!calendar || !date || !eventsItem || !clocksItem || !weatherItem)
+        return;
+    const displayBox = eventsItem.get_parent();
+    if (displayBox) {
+        displayBox.remove_child(clocksItem);
+        displayBox.remove_child(eventsItem);
+        displayBox.remove_child(weatherItem);
+        displayBox.insert_child_at_index(weatherItem, 1);
+        displayBox.insert_child_at_index(clocksItem, 2);
+        displayBox.insert_child_at_index(eventsItem, 3);
+    }
+    const calendarBox = calendar.get_parent();
+    if (calendarBox) {
+        calendarBox.remove_child(calendar);
+        calendarBox.remove_child(date);
+        calendarBox.insert_child_at_index(calendar, 1);
+        calendarBox.insert_child_at_index(date, 2);
+    }
+    calendarColumnInverted = true;
+}
+
+function invertCalendarRevert() {
+    if (!calendarColumnInverted)
+        return;
+    calendarColumnInverted = false;
+    const dateMenu = Main.panel.statusArea.dateMenu;
+    const calendar = dateMenu?._calendar;
+    const date = dateMenu?._date;
+    const eventsItem = dateMenu?._eventsItem;
+    const clocksItem = dateMenu?._clocksItem;
+    const weatherItem = dateMenu?._weatherItem;
+    const displayBox = eventsItem?.get_parent();
+    if (displayBox && eventsItem && clocksItem && weatherItem) {
+        displayBox.remove_child(eventsItem);
+        displayBox.remove_child(clocksItem);
+        displayBox.remove_child(weatherItem);
+        displayBox.insert_child_at_index(eventsItem, 1);
+        displayBox.insert_child_at_index(clocksItem, 2);
+        displayBox.insert_child_at_index(weatherItem, 3);
+    }
+    const calendarBox = calendar?.get_parent();
+    if (calendarBox && date && calendar) {
+        calendarBox.remove_child(date);
+        calendarBox.remove_child(calendar);
+        calendarBox.insert_child_at_index(date, 0);
+        calendarBox.insert_child_at_index(calendar, 1);
+    }
+}
 
 export const TWEAK_REGISTRY = [
     // 1-5. panel status-area buttons (hide per key, show on revert)
@@ -557,14 +811,15 @@ export const TWEAK_REGISTRY = [
             }
         },
     },
-    // 22. overlay key (Super)
+    // 22. overlay key (Super) — shares one physical state with entry 45
+    // (tweaks-double-super-to-app-grid); both converge in overlayKeySync().
     {
         key: 'tweaks-overlay-key', type: 'b', default: true,
-        apply(api) {
-            api.blockSignal(global.display, 'overlay-key');
+        apply(api, value, settings) {
+            overlayKeySync(api, settings);
         },
         revert(api) {
-            api.unblockSignal(global.display, 'overlay-key');
+            overlayKeyRevert(api, 'overlayKey');
         },
     },
     // 23. ripple box animation
@@ -591,5 +846,273 @@ export const TWEAK_REGISTRY = [
             api.restorePatched('winpreview-caption');
             api.removeUiGroupClass('lfn-no-window-caption');
         },
+    },
+    // 25-29. quick settings feature toggles
+    {
+        key: 'tweaks-quick-settings-dark-mode', type: 'b', default: true,
+        apply(api) { qsToggleApply(api, '_darkMode'); },
+        revert(api) { qsToggleRevert(api, '_darkMode'); },
+    },
+    {
+        key: 'tweaks-quick-settings-backlight', type: 'b', default: true,
+        apply(api) { qsToggleApply(api, '_backlight'); },
+        revert(api) { qsToggleRevert(api, '_backlight'); },
+    },
+    {
+        key: 'tweaks-quick-settings-dnd', type: 'b', default: true,
+        apply(api) { qsToggleApply(api, '_doNotDisturb'); },
+        revert(api) { qsToggleRevert(api, '_doNotDisturb'); },
+    },
+    {
+        key: 'tweaks-quick-settings-night-light', type: 'b', default: true,
+        apply(api) { qsToggleApply(api, '_nightLight'); },
+        revert(api) { qsToggleRevert(api, '_nightLight'); },
+    },
+    {
+        key: 'tweaks-quick-settings-airplane-mode', type: 'b', default: true,
+        apply(api) { qsToggleApply(api, '_rfkill'); },
+        revert(api) { qsToggleRevert(api, '_rfkill'); },
+    },
+    // 30. screen-sharing panel indicator
+    {
+        key: 'tweaks-screen-sharing-indicator', type: 'b', default: true,
+        apply(api) {
+            indicatorApply(api, 'screen-sharing',
+                () => Main.panel.statusArea.screenSharing);
+        },
+        revert(api) {
+            indicatorRevert(api, 'screen-sharing',
+                () => Main.panel.statusArea.screenSharing,
+                ind => ind._sync?.());
+        },
+    },
+    // 31. screen-recording panel indicator
+    {
+        key: 'tweaks-screen-recording-indicator', type: 'b', default: true,
+        apply(api) {
+            const ind = Main.panel.statusArea.screenRecording;
+            if (ind?._timeoutId) {
+                GLib.source_remove(ind._timeoutId);
+                delete ind._timeoutId;
+            }
+            indicatorApply(api, 'screen-recording', () => ind);
+        },
+        revert(api) {
+            indicatorRevert(api, 'screen-recording',
+                () => Main.panel.statusArea.screenRecording,
+                ind => {
+                    if (ind._timeoutId) {
+                        GLib.source_remove(ind._timeoutId);
+                        delete ind._timeoutId;
+                    }
+                    if (Main.screenshotUI?.screencast_in_progress)
+                        ind._onScreencastInProgressChanged();
+                    else
+                        ind.hide();
+                });
+        },
+    },
+    // 32. world clocks section in the clock menu
+    {
+        key: 'tweaks-world-clock', type: 'b', default: true,
+        apply(api) {
+            sectionApply(api, 'world-clock',
+                () => Main.panel.statusArea.dateMenu?._clocksItem);
+        },
+        revert(api) {
+            sectionRevert(api, 'world-clock',
+                () => Main.panel.statusArea.dateMenu?._clocksItem);
+        },
+    },
+    // 33. weather section in the clock menu
+    {
+        key: 'tweaks-weather', type: 'b', default: true,
+        apply(api) {
+            sectionApply(api, 'weather',
+                () => Main.panel.statusArea.dateMenu?._weatherItem);
+        },
+        revert(api) {
+            sectionRevert(api, 'weather',
+                () => Main.panel.statusArea.dateMenu?._weatherItem);
+        },
+    },
+    // 34. calendar in the clock menu
+    {
+        key: 'tweaks-calendar', type: 'b', default: true,
+        apply(api) {
+            api.hideActor(Main.panel.statusArea.dateMenu?._calendar);
+        },
+        revert(api) {
+            api.showActor(Main.panel.statusArea.dateMenu?._calendar);
+        },
+    },
+    // 35. events button in the clock menu
+    {
+        key: 'tweaks-events', type: 'b', default: true,
+        apply(api) {
+            sectionApply(api, 'events',
+                () => Main.panel.statusArea.dateMenu?._eventsItem);
+        },
+        revert(api) {
+            sectionRevert(api, 'events',
+                () => Main.panel.statusArea.dateMenu?._eventsItem);
+        },
+    },
+    // 36. window menu (title-bar right-click menu)
+    {
+        key: 'tweaks-window-menu', type: 'b', default: true,
+        apply(api) {
+            const proto = WindowMenu.WindowMenuManager?.prototype;
+            if (!proto)
+                return;
+            api.patchOnce('window-menu', proto, 'showWindowMenuForWindow',
+                () => window => {
+                    window.focus(global.get_current_time());
+                    window.raise();
+                });
+        },
+        revert(api) {
+            api.restorePatched('window-menu');
+        },
+    },
+    // 37. desktop background right-click menu
+    {
+        key: 'tweaks-background-menu', type: 'b', default: true,
+        apply(api) {
+            const proto = BackgroundMenu.BackgroundMenu?.prototype;
+            if (!proto)
+                return;
+            api.patchOnce('bgmenu-open', proto, 'open', () => () => {});
+        },
+        revert(api) {
+            api.restorePatched('bgmenu-open');
+        },
+    },
+    // 38. app icon under window previews in the overview
+    {
+        key: 'tweaks-window-picker-icon', type: 'b', default: true,
+        apply(api) {
+            for (const icon of windowPickerIcons())
+                api.hideActor(icon);
+            const proto = WindowPreview.WindowPreview?.prototype;
+            if (!proto)
+                return;
+            api.patchOnce('winpreview-icon', proto, '_init', orig => function (...args) {
+                orig.apply(this, args);
+                this._icon?.hide();
+            });
+        },
+        revert(api) {
+            api.restorePatched('winpreview-icon');
+            for (const icon of windowPickerIcons())
+                api.showActor(icon);
+        },
+    },
+    // 39. notification icon in the panel (clock menu's messages indicator)
+    {
+        key: 'tweaks-panel-notification-icon', type: 'b', default: true,
+        apply(api) {
+            indicatorApply(api, 'panel-notification',
+                () => Main.panel.statusArea.dateMenu?._indicator);
+        },
+        revert(api) {
+            indicatorRevert(api, 'panel-notification',
+                () => Main.panel.statusArea.dateMenu?._indicator,
+                ind => ind._sync?.());
+        },
+    },
+    // 40. power/system indicator in the panel
+    {
+        key: 'tweaks-power-icon', type: 'b', default: true,
+        apply(api) {
+            indicatorApply(api, 'power',
+                () => Main.panel.statusArea.quickSettings?._system);
+        },
+        revert(api) {
+            indicatorRevert(api, 'power',
+                () => Main.panel.statusArea.quickSettings?._system,
+                ind => ind._syncIndicatorsVisible?.());
+        },
+    },
+    // 41. panel in overview
+    {
+        key: 'tweaks-panel-in-overview', type: 'b', default: true,
+        apply: panelInOverviewApply,
+        revert: panelInOverviewRevert,
+    },
+    // 42. workspace peek in the overview
+    {
+        key: 'tweaks-workspace-peek', type: 'b', default: true,
+        apply(api) {
+            const proto = WorkspacesView.WorkspacesView?.prototype;
+            if (!proto)
+                return;
+            // just-perfection disables the peek by forcing a large spacing
+            api.patchOnce('wsview-spacing', proto, '_getSpacing', orig =>
+                function (box, fitMode, vertical) {
+                    if (fitMode === 0)
+                        return 400;
+                    return orig.call(this, box, fitMode, vertical);
+                });
+        },
+        revert(api) {
+            api.restorePatched('wsview-spacing');
+        },
+    },
+    // 43. workspace switcher click always goes to the main view
+    {
+        key: 'tweaks-workspace-switcher-click-main-view', type: 'b', default: false,
+        apply(api) {
+            const thumb = WorkspaceThumbnail.WorkspaceThumbnail?.prototype;
+            const ThumbnailState = WorkspaceThumbnail.ThumbnailState;
+            if (!thumb || !ThumbnailState)
+                return;
+            api.patchOnce('wsthumb-activate', thumb, 'activate', () => function (time) {
+                if (this.state > ThumbnailState.NORMAL)
+                    return;
+                if (!this.metaWorkspace.active)
+                    this.metaWorkspace.activate(time);
+                Main.overview.hide();
+            });
+        },
+        revert(api) {
+            api.restorePatched('wsthumb-activate');
+        },
+    },
+    // 44. show the workspace switcher even with a single dynamic workspace
+    {
+        key: 'tweaks-always-show-workspace-switcher', type: 'b', default: false,
+        apply(api) {
+            const proto = WorkspaceThumbnail.ThumbnailsBox?.prototype;
+            if (!proto)
+                return;
+            api.patchOnce('thumbs-should-show', proto, '_updateShouldShow',
+                () => function () {
+                    if (this._shouldShow === true)
+                        return;
+                    this._shouldShow = true;
+                    this.notify('should-show');
+                });
+        },
+        revert(api) {
+            api.restorePatched('thumbs-should-show');
+        },
+    },
+    // 45. double-tap Super opens the app grid — shares one physical state
+    // with entry 22 (tweaks-overlay-key); both converge in overlayKeySync().
+    {
+        key: 'tweaks-double-super-to-app-grid', type: 'b', default: true,
+        apply(api, value, settings) {
+            overlayKeySync(api, settings);
+        },
+        revert(api) {
+            overlayKeyRevert(api, 'doubleSuper');
+        },
+    },
+    // 46. invert calendar column item positions in the clock menu
+    {
+        key: 'tweaks-invert-calendar-column-items', type: 'b', default: false,
+        apply: invertCalendarApply,
+        revert: invertCalendarRevert,
     },
 ];
