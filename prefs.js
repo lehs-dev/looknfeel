@@ -119,7 +119,10 @@ function _keybindingRow(settings, key, title, subtitle = '', strv = true) {
 }
 
 function _entryRow(settings, key, title, subtitle = '') {
-    const row = new Adw.EntryRow({title, subtitle});
+    // AdwEntryRow has no subtitle property; show the hint as a tooltip.
+    const row = new Adw.EntryRow({ title });
+    if (subtitle)
+        row.set_tooltip_text(subtitle);
     settings.bind(key, row, 'text', Gio.SettingsBindFlags.DEFAULT);
     return row;
 }
