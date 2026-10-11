@@ -19,12 +19,136 @@
   <summary>Blur the top panel</summary>
     </key>
 <key name="blur-panel-radius" type="i">
-  <default>30</default>
+  <default>0</default>
   <summary>Panel blur radius</summary>
 </key>
 <key name="blur-panel-brightness" type="d">
   <default>0.6</default>
   <summary>Panel blur brightness</summary>
+</key>
+<key name="blur-panel-override-background" type="b">
+  <default>true</default>
+  <summary>Make the panel background transparent when blurred</summary>
+</key>
+<key name="blur-panel-disable-in-overview" type="b">
+  <default>true</default>
+  <summary>Remove the panel blur while the overview is open</summary>
+</key>
+<key name="blur-lockscreen-enabled" type="b">
+  <default>true</default>
+  <summary>Blur the lock screen background</summary>
+</key>
+
+<!-- Gap module (phase 2, ported from window-gap) -->
+<key name="gap-enabled" type="b">
+  <default>true</default>
+  <summary>Apply outer window gaps (screen margins)</summary>
+</key>
+<key name="gap-same-on-all-edges" type="b">
+  <default>true</default>
+  <summary>Use one gap size for all screen edges</summary>
+</key>
+<key name="gap-size" type="i">
+  <default>16</default>
+  <summary>Gap size in px when using the same gap on all edges</summary>
+</key>
+<key name="gap-top" type="i">
+  <default>16</default>
+  <summary>Top edge gap in px (used when per-edge gaps are on)</summary>
+</key>
+<key name="gap-bottom" type="i">
+  <default>16</default>
+  <summary>Bottom edge gap in px (used when per-edge gaps are on)</summary>
+</key>
+<key name="gap-left" type="i">
+  <default>25</default>
+  <summary>Left edge gap in px (used when per-edge gaps are on)</summary>
+</key>
+<key name="gap-right" type="i">
+  <default>28</default>
+  <summary>Right edge gap in px (used when per-edge gaps are on)</summary>
+</key>
+
+<!-- Static workspace background module (phase 2) -->
+<key name="wsbg-enabled" type="b">
+  <default>true</default>
+  <summary>Keep the wallpaper static during workspace switches</summary>
+</key>
+
+<!-- Light style module (phase 2) -->
+<key name="lightstyle-enabled" type="b">
+  <default>true</default>
+  <summary>Prefer the light shell color scheme</summary>
+</key>
+
+<!-- Search module (phase 2, ported from search-light) -->
+<key name="search-enabled" type="b">
+  <default>true</default>
+  <summary>Enable the floating search popup</summary>
+</key>
+<key name="search-shortcut" type="s">
+  <default>'&lt;Super&gt;q'</default>
+  <summary>Keybinding that toggles the search popup</summary>
+</key>
+<key name="search-preferred-monitor" type="i">
+  <default>0</default>
+  <summary>Monitor for the popup: 0 = primary, N = Nth monitor</summary>
+</key>
+<key name="search-popup-at-cursor-monitor" type="b">
+  <default>true</default>
+  <summary>Show the popup on the monitor containing the cursor</summary>
+</key>
+<key name="search-window-scale" type="d">
+  <default>0.1</default>
+  <summary>Popup width as a fraction of the monitor width</summary>
+</key>
+<key name="search-entry-font-size" type="i">
+  <default>16</default>
+  <summary>Search entry font size in pt</summary>
+</key>
+<key name="search-animations" type="b">
+  <default>true</default>
+  <summary>Animate the popup when it appears</summary>
+</key>
+<key name="search-animation-speed" type="i">
+  <default>100</default>
+  <summary>Popup show-animation duration in ms</summary>
+</key>
+
+<!-- Lamp module (phase 2, ported from compiz-alike-magic-lamp-effect) -->
+<key name="lamp-enabled" type="b">
+  <default>true</default>
+  <summary>Play the magic lamp effect on minimize/unminimize</summary>
+</key>
+<key name="lamp-effect" type="s">
+  <default>'default'</default>
+  <summary>Deformation variant: 'default' or 'sine'</summary>
+</key>
+<key name="lamp-duration-ms" type="i">
+  <default>256</default>
+  <summary>Lamp animation duration in ms</summary>
+</key>
+<key name="lamp-x-tiles" type="i">
+  <default>10</default>
+  <summary>Horizontal deformation tiles</summary>
+</key>
+<key name="lamp-y-tiles" type="i">
+  <default>3</default>
+  <summary>Vertical deformation tiles</summary>
+</key>
+
+<!-- Input method panel module (phase 2, ported from kimpanel) -->
+<key name="kimpanel-enabled" type="b">
+  <default>true</default>
+  <summary>Show the input-method candidate panel</summary>
+</key>
+<key name="kimpanel-vertical-list" type="b">
+  <default>false</default>
+  <summary>Show candidates in a vertical list</summary>
+</key>
+<key name="kimpanel-font" type="s">
+  <default>'Sans Regular 11'</default>
+  <summary>Font used in the candidate panel</summary>
 </key>
 
 <!-- Tweaks module (phase 1 core subset, adapted from just-perfection) -->
@@ -113,7 +237,7 @@
   <summary>OSD position on a 3x3 grid, 0 = default</summary>
 </key>
 <key name="tweaks-overlay-key" type="b">
-  <default>true</default>
+  <default>false</default>
   <summary>Super key opens the overview</summary>
 </key>
 <key name="tweaks-ripple-box" type="b">
@@ -135,11 +259,11 @@
   <summary>Show dock on: 0 = primary monitor only, 1 = all monitors</summary>
 </key>
 <key name="dock-autohide" type="b">
-  <default>false</default>
+  <default>true</default>
   <summary>Autohide the dock, reveal on screen-edge dwell</summary>
 </key>
 <key name="dock-dodge-windows" type="b">
-  <default>false</default>
+  <default>true</default>
   <summary>Intellihide: hide the dock when a window overlaps it</summary>
 </key>
 <key name="dock-pressure-sense" type="b">
@@ -151,7 +275,7 @@
   <summary>Dock icon size scale</summary>
 </key>
 <key name="dock-icon-spacing" type="d">
-  <default>0.15</default>
+  <default>0.5</default>
   <summary>Spacing between dock icons</summary>
 </key>
 <key name="dock-edge-distance" type="d">
@@ -159,7 +283,7 @@
   <summary>Distance from the screen edge in px</summary>
 </key>
 <key name="dock-panel-mode" type="b">
-  <default>false</default>
+  <default>true</default>
   <summary>Stretch the dock background across the whole screen edge</summary>
 </key>
 <key name="dock-animate" type="b">
@@ -167,15 +291,15 @@
   <summary>Animate icons on hover (magnification)</summary>
 </key>
 <key name="dock-magnify" type="d">
-  <default>0.5</default>
+  <default>0.3</default>
   <summary>Icon magnification amount on hover</summary>
 </key>
 <key name="dock-spread" type="d">
-  <default>0.5</default>
+  <default>0.75</default>
   <summary>How much magnified icons push their neighbors aside</summary>
 </key>
 <key name="dock-rise" type="d">
-  <default>0.35</default>
+  <default>0.25</default>
   <summary>How much magnified icons rise off the dock</summary>
 </key>
 <key name="dock-rise-curve" type="i">
@@ -187,7 +311,7 @@
   <summary>Bounce the icon when launching an app</summary>
 </key>
 <key name="dock-show-trash" type="b">
-  <default>true</default>
+  <default>false</default>
   <summary>Show the trash icon in the dock</summary>
 </key>
 <key name="dock-show-mounts" type="b">
@@ -203,7 +327,7 @@
   <summary>Only show favorite apps in the dock</summary>
 </key>
 <key name="dock-background-color" type="s">
-  <default>'rgba(20,20,25,0.65)'</default>
+  <default>'transparent'</default>
   <summary>Dock background color as a CSS rgba() string</summary>
 </key>
 <key name="dock-border-radius" type="i">
@@ -211,7 +335,7 @@
   <summary>Dock background corner radius in px</summary>
 </key>
 <key name="dock-blur-background" type="b">
-  <default>true</default>
+  <default>false</default>
   <summary>Blur behind the dock background</summary>
 </key>
 <key name="dock-blur-radius" type="i">
@@ -225,6 +349,219 @@
 <key name="dock-running-indicator-style" type="i">
   <default>0</default>
   <summary>Running-app indicator style index</summary>
+</key>
+
+<!-- Tiling module (phase 2, ported from Tiling Shell) -->
+<key name="tiling-enabled" type="b">
+  <default>true</default>
+  <summary>Enable the tiling module</summary>
+</key>
+<key name="tiling-enable-keybindings" type="b">
+  <default>true</default>
+  <summary>Enable tiling keybindings</summary>
+</key>
+<key name="tiling-move-window-right" type="as">
+  <default>['&lt;Super&gt;Right']</default>
+  <summary>Move the focused window to the tile on its right</summary>
+</key>
+<key name="tiling-move-window-left" type="as">
+  <default>['&lt;Super&gt;Left']</default>
+  <summary>Move the focused window to the tile on its left</summary>
+</key>
+<key name="tiling-move-window-up" type="as">
+  <default>['&lt;Super&gt;Up']</default>
+  <summary>Move the focused window to the tile above</summary>
+</key>
+<key name="tiling-move-window-down" type="as">
+  <default>['&lt;Super&gt;Down']</default>
+  <summary>Move the focused window to the tile below</summary>
+</key>
+<key name="tiling-focus-window-next" type="as">
+  <default>['']</default>
+  <summary>Focus the next window</summary>
+</key>
+<key name="tiling-focus-window-prev" type="as">
+  <default>['']</default>
+  <summary>Focus the previous window</summary>
+</key>
+<key name="tiling-focus-window-right" type="as">
+  <default>['']</default>
+  <summary>Focus the window to the right</summary>
+</key>
+<key name="tiling-focus-window-left" type="as">
+  <default>['']</default>
+  <summary>Focus the window to the left</summary>
+</key>
+<key name="tiling-focus-window-up" type="as">
+  <default>['']</default>
+  <summary>Focus the window above</summary>
+</key>
+<key name="tiling-focus-window-down" type="as">
+  <default>['']</default>
+  <summary>Focus the window below</summary>
+</key>
+<key name="tiling-untile-window" type="as">
+  <default>['']</default>
+  <summary>Restore the focused window to its pre-tiling size</summary>
+</key>
+<key name="tiling-focus-wraparound" type="b">
+  <default>true</default>
+  <summary>Wrap around at the window edge when focusing next/previous</summary>
+</key>
+<key name="tiling-restrict-directional-focus-to-tiled" type="b">
+  <default>false</default>
+  <summary>Only consider tiled windows for directional focus</summary>
+</key>
+<key name="tiling-tiling-system" type="b">
+  <default>true</default>
+  <summary>Tile windows by holding the activation key while dragging</summary>
+</key>
+<key name="tiling-activation-key" type="s">
+  <default>'ctrl'</default>
+  <summary>Modifier held while dragging to tile: none, ctrl, alt, super</summary>
+</key>
+<key name="tiling-deactivation-key" type="s">
+  <default>'ctrl'</default>
+  <summary>Modifier held while dragging to suppress tiling</summary>
+</key>
+<key name="tiling-span-multiple-tiles" type="b">
+  <default>true</default>
+  <summary>Hold the span key while dragging to span multiple tiles</summary>
+</key>
+<key name="tiling-span-multiple-tiles-key" type="s">
+  <default>'alt'</default>
+  <summary>Modifier held while dragging to span tiles: none, ctrl, alt, super</summary>
+</key>
+<key name="tiling-auto-resize-complementing" type="b">
+  <default>true</default>
+  <summary>Resize adjacent tiled windows when a tiled window is resized</summary>
+</key>
+<key name="tiling-restore-window-size" type="b">
+  <default>true</default>
+  <summary>Restore the original window size when untiled</summary>
+</key>
+<key name="tiling-window-menu-buttons" type="b">
+  <default>true</default>
+  <summary>Add tile actions to the window menu</summary>
+</key>
+<key name="tiling-active-screen-edges" type="b">
+  <default>true</default>
+  <summary>Tile by dragging windows against screen edges</summary>
+</key>
+<key name="tiling-top-edge-maximize" type="b">
+  <default>false</default>
+  <summary>Drag against the top edge to maximize the window</summary>
+</key>
+<key name="tiling-quarter-tiling-activation-area" type="i">
+  <default>40</default>
+  <summary>Corner zone size for quarter tiling, in px</summary>
+</key>
+<key name="tiling-edge-tiling-offset" type="i">
+  <default>16</default>
+  <summary>Distance from the screen edge that triggers edge tiling, in px</summary>
+</key>
+<key name="tiling-snap-mode" type="s">
+  <default>'default'</default>
+  <summary>Edge snap behavior: 'default' follows quarters/screen halves</summary>
+</key>
+<key name="tiling-inner-gaps" type="i">
+  <default>8</default>
+  <summary>Gap between tiled windows, in px</summary>
+</key>
+<key name="tiling-outer-gaps" type="i">
+  <default>0</default>
+  <summary>Gap between tiles and the work area edge, in px</summary>
+</key>
+
+
+<!-- Tweaks module (phase 2 additions, just-perfection parity) -->
+<key name="tweaks-quick-settings-dark-mode" type="b">
+  <default>true</default>
+  <summary>Show the Dark Mode toggle in Quick Settings</summary>
+</key>
+<key name="tweaks-quick-settings-backlight" type="b">
+  <default>true</default>
+  <summary>Show the Backlight toggle in Quick Settings</summary>
+</key>
+<key name="tweaks-quick-settings-dnd" type="b">
+  <default>true</default>
+  <summary>Show the Do Not Disturb toggle in Quick Settings</summary>
+</key>
+<key name="tweaks-quick-settings-night-light" type="b">
+  <default>true</default>
+  <summary>Show the Night Light toggle in Quick Settings</summary>
+</key>
+<key name="tweaks-quick-settings-airplane-mode" type="b">
+  <default>true</default>
+  <summary>Show the Airplane Mode toggle in Quick Settings</summary>
+</key>
+<key name="tweaks-screen-sharing-indicator" type="b">
+  <default>true</default>
+  <summary>Show the screen sharing indicator in the panel</summary>
+</key>
+<key name="tweaks-screen-recording-indicator" type="b">
+  <default>true</default>
+  <summary>Show the screen recording indicator in the panel</summary>
+</key>
+<key name="tweaks-world-clock" type="b">
+  <default>true</default>
+  <summary>Show world clocks in the clock menu</summary>
+</key>
+<key name="tweaks-weather" type="b">
+  <default>true</default>
+  <summary>Show weather in the clock menu</summary>
+</key>
+<key name="tweaks-calendar" type="b">
+  <default>true</default>
+  <summary>Show the calendar in the clock menu</summary>
+</key>
+<key name="tweaks-events" type="b">
+  <default>true</default>
+  <summary>Show the events button in the clock menu</summary>
+</key>
+<key name="tweaks-window-menu" type="b">
+  <default>true</default>
+  <summary>Show the window menu on title-bar right-click</summary>
+</key>
+<key name="tweaks-background-menu" type="b">
+  <default>true</default>
+  <summary>Show the desktop background right-click menu</summary>
+</key>
+<key name="tweaks-window-picker-icon" type="b">
+  <default>true</default>
+  <summary>Show the app icon under window previews in overview</summary>
+</key>
+<key name="tweaks-panel-notification-icon" type="b">
+  <default>true</default>
+  <summary>Show the notification icon in the panel</summary>
+</key>
+<key name="tweaks-power-icon" type="b">
+  <default>true</default>
+  <summary>Show the power/system indicator in the panel</summary>
+</key>
+<key name="tweaks-panel-in-overview" type="b">
+  <default>true</default>
+  <summary>Show the panel while the overview is open</summary>
+</key>
+<key name="tweaks-workspace-peek" type="b">
+  <default>true</default>
+  <summary>Show adjacent workspaces peeking in overview</summary>
+</key>
+<key name="tweaks-workspace-switcher-click-main-view" type="b">
+  <default>false</default>
+  <summary>Workspace switcher click always goes to the main view</summary>
+</key>
+<key name="tweaks-always-show-workspace-switcher" type="b">
+  <default>false</default>
+  <summary>Always show the workspace switcher</summary>
+</key>
+<key name="tweaks-double-super-to-app-grid" type="b">
+  <default>true</default>
+  <summary>Double-tap Super to open the app grid</summary>
+</key>
+<key name="tweaks-invert-calendar-column-items" type="b">
+  <default>false</default>
+  <summary>Invert calendar column item positions in the clock menu</summary>
 </key>
 
   </schema>

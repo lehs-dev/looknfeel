@@ -4,20 +4,39 @@ import {log} from '../../shared/logger.js';
 
 import {NativeBlurEffect} from './effects/nativeBlur.js';
 import {PanelBlur} from './components/panel.js';
+import {LockscreenBlur} from './components/lockscreen.js';
+
+const BLUR_KEYS = [
+    'blur-enabled',
+    'blur-panel-enabled',
+    'blur-panel-radius',
+    'blur-panel-brightness',
+    'blur-panel-override-background',
+    'blur-panel-disable-in-overview',
+    'blur-lockscreen-enabled',
+];
 
 export class BlurModule {
     constructor(settings) {
         this._rawSettings = settings;
         this._settings = new ModuleSettings(settings);
         this._signals = new SignalManager();
-        this._components = [new PanelBlur(this._settings, this._signals)];
+        this._components = this._buildComponents();
         this._actorEffects = new Map();  // actor -> effect, cho API blurActor
+    }
+
+    _buildComponents() {
+        return [
+            new PanelBlur(this._settings, this._signals),
+            new LockscreenBlur(this._settings, this._signals),
+        ];
     }
 
     enable() {
         // Đăng ký listener TRƯỚC khi check, để toggle trong prefs luôn có tác dụng
         // kể cả khi blur đang tắt lúc khởi động
-        this._settings.onChanged('blur-enabled', () => this._reload());
+        for (const key of BLUR_KEYS)
+            this._settings.onChanged(key, () => this._reload());
         if (!this._settings.getBoolean('blur-enabled')) {
             log('Blur module disabled by setting, skipping');
             return;
@@ -41,8 +60,10 @@ export class BlurModule {
 
     _reload() {
         this.disable();
-        // disable() đã destroy ModuleSettings cũ → bọc lại từ settings gốc
+        // disable() đã destroy ModuleSettings cũ → bọc lại từ settings gốc.
+        // Components giữ reference tới wrapper cũ nên phải build lại.
         this._settings = new ModuleSettings(this._rawSettings);
+        this._components = this._buildComponents();
         this.enable();
     }
 
