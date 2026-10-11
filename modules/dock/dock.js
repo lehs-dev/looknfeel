@@ -10,6 +10,7 @@ import { SignalManager } from '../../shared/signals.js';
 import { log } from '../../shared/logger.js';
 import { DockActor } from './dockActor.js';
 import { DockServices } from './services.js';
+import { setOverviewDashVisible } from './dashCompat.js';
 
 // Changes that require rebuilding the dock actors.
 const STRUCTURAL_KEYS = [
@@ -47,6 +48,12 @@ export class DockModule {
         }
         this._services = new DockServices();
         this._services.enable();
+        // The stock overview dash sits above our chrome dock: hide it or
+        // it peeks through and steals clicks. The shell re-shows dash
+        // items on its own redisplay, so re-hide on every overview open.
+        setOverviewDashVisible(false);
+        this._signals.connect(Main.overview, 'showing',
+            () => setOverviewDashVisible(false));
         this._signals.connect(Main.layoutManager, 'monitors-changed',
             () => this._rebuild());
         for (const key of STRUCTURAL_KEYS)
@@ -61,14 +68,15 @@ export class DockModule {
     }
 
     disable() {
+        // Give the stock overview dash back (no-op when we never hid it).
+        setOverviewDashVisible(true);
         for (const dock of this._docks.values())
             dock.destroy();
         this._docks.clear();
         if (this._services) {
             this._services.disable();
             this._services = null;
-        }
-        if (this._signals) {
+        }        if (this._signals) {
             this._signals.disconnectAll();
             this._signals = null;
         }

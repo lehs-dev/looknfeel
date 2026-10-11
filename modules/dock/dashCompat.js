@@ -4,6 +4,7 @@
 // Ported from dash2dock-lite by icedman (GPL-2.0-or-later).
 
 import * as AppFavorites from 'resource:///org/gnome/shell/ui/appFavorites.js';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import St from 'gi://St';
 
 export function getDashBox(dash) {
@@ -122,4 +123,24 @@ export function getFavoriteIds() {
         /* ignore */
     }
     return [];
+}
+
+// The overview's stock dash sits above our chrome dock and would both
+// peek through it and steal its clicks, so it stays hidden while our
+// dock is enabled. Mirrors dash2dock-lite's _showMainOverviewDash.
+export function setOverviewDashVisible(show) {
+    const dash = Main.overview.dash;
+    dash.opacity = show ? 255 : 0;
+    dash._background.style = show ? '' : 'background: transparent !important;';
+    for (const child of dash._box.get_children()) {
+        child.opacity = show ? 255 : 0;
+        child.visible = show;
+        if (child.child) {
+            child.child.reactive = show;
+            child.child.track_hover = show;
+        }
+    }
+    dash._showAppsIcon.opacity = show ? 255 : 0;
+    dash._showAppsIcon.child.reactive = show;
+    dash._showAppsIcon.child.track_hover = show;
 }

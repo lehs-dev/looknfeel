@@ -258,7 +258,15 @@ const Main = {
         monitors: [monitor0], primaryIndex: 0, primaryMonitor: monitor0,
         addChrome() {}, removeChrome() {},
     },
-    overview: { visible: false, showApps() {} },
+    overview: {
+        visible: false, showApps() {},
+        dash: {
+            opacity: 255,
+            _background: { style: '' },
+            _box: null, // set per-test
+            _showAppsIcon: { opacity: 255, child: { reactive: true, track_hover: true } },
+        },
+    },
     uiGroup: new MockActor({}),
 };
 const BoxPointer = { PopupAnimation: { FULL: 0 } };
@@ -296,7 +304,7 @@ const settingsMod = loadRepo('shared/settings.js', { SignalManager: signals.Sign
 const loggerMod = loadRepo('shared/logger.js', {}, '{log,debug,warn,error}').ret;
 const geom = loadRepo('modules/dock/geom.js', {}, '{getDistanceSqr,isInRect,isOverlapRect}').ret;
 const dashCompat = loadRepo('modules/dock/dashCompat.js',
-    { St, AppFavorites }, '{getDashBox,hideDashBackground,hideShowAppsIcon,patchDash,getStIconFromAppwell,getAppwellDot,getContainerLabel,getFavoriteIds}').ret;
+    { St, Main, AppFavorites }, '{getDashBox,hideDashBackground,hideShowAppsIcon,patchDash,getStIconFromAppwell,getAppwellDot,getContainerLabel,getFavoriteIds,setOverviewDashVisible}').ret;
 const drawing = loadRepo('modules/dock/drawing.js',
     { Cairo, Clutter, Cogl, GObject, St }, '{Dot}').ret;
 const dockItems = loadRepo('modules/dock/dockItems.js',
@@ -580,3 +588,24 @@ test('H: fired one-shots leave no stale ids for disconnectAll', () => {
     GLib.source_remove = origRemove;
     resetClock();
 });
+
+test('I: stock overview dash hides on enable and restores on disable', () => {
+    const item = new MockActor({});
+    item.child = new MockActor({ reactive: true, track_hover: true });
+    const box = new MockActor({});
+    box.add_child(item);
+    Main.overview.dash._box = box;
+    Main.overview.dash.opacity = 255;
+    dashCompat.setOverviewDashVisible(false);
+    assert.equal(Main.overview.dash.opacity, 0);
+    assert.equal(item.visible, false);
+    assert.equal(item.opacity, 0);
+    assert.equal(item.child.reactive, false);
+    assert.equal(Main.overview.dash._showAppsIcon.opacity, 0);
+    dashCompat.setOverviewDashVisible(true);
+    assert.equal(Main.overview.dash.opacity, 255);
+    assert.equal(item.visible, true);
+    assert.equal(item.child.reactive, true);
+    assert.equal(Main.overview.dash._showAppsIcon.opacity, 255);
+});
+
