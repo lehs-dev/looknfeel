@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.looknfeel"
+          path="/org/gnome/shell/extensions/looknfeel/">
+    <key name="blur-enabled" type="b">
+      <default>true</default>
+      <summary>Enable blur effects</summary>
+    </key>
+    <key name="dock-enabled" type="b">
+      <default>true</default>
+      <summary>Enable the dock</summary>
+    </key>
+    <key name="tweaks-enabled" type="b">
+      <default>true</default>
+      <summary>Enable UI tweaks</summary>
+    </key>
+    <key name="blur-panel-enabled" type="b">
+  <default>true</default>
+  <summary>Blur the top panel</summary>
+    </key>
+<key name="blur-panel-radius" type="i">
+  <default>30</default>
+  <summary>Panel blur radius</summary>
+</key>
+<key name="blur-panel-brightness" type="d">
+  <default>0.6</default>
+  <summary>Panel blur brightness</summary>
+</key>
+
+  </schema>
+</schemalist>
