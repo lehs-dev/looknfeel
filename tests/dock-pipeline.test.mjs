@@ -5,7 +5,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const LOOK = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+const LOOK = '/home/lehsdev/Desktop/Extension/looknfeel';
 
 // ---------- minimal Clutter/St actor model ----------
 let nextId = 1;
@@ -559,4 +559,24 @@ test('G: widget stays hidden when its app is absent', () => {
     const entry = dock._icons.find(e => e.appId === 'g1.desktop');
     assert.equal(entry._renderer.opacity, 255, 'normal icon renderer untouched');
     dock.destroy(); resetClock();
+});
+
+test('H: fired one-shots leave no stale ids for disconnectAll', () => {
+    resetClock();
+    const removed = [];
+    const origRemove = GLib.source_remove;
+    GLib.source_remove = id => { removed.push(id); origRemove(id); };
+    const sm = new signals.SignalManager();
+    let runs = 0;
+    sm.addTimer(120, () => { runs++; return false; }); // one-shot
+    sm.addTimer(15, () => true); // repeating
+    stepTimers(10); // 150ms: one-shot fired, repeater alive
+    assert.equal(runs, 1);
+    removed.length = 0;
+    sm.disconnectAll();
+    const dupes = removed.filter((id, i) => removed.indexOf(id) !== i);
+    assert.deepEqual(dupes, [], 'no id removed twice');
+    assert.deepEqual(removed.length <= 1, true, 'only the live repeater removed');
+    GLib.source_remove = origRemove;
+    resetClock();
 });

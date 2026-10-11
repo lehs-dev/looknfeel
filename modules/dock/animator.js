@@ -4,7 +4,6 @@
 // magnified copies are drawn as St.Icon renderers in the render area.
 // Ported from dash2dock-lite by icedman (GPL-2.0-or-later).
 
-import GLib from 'gi://GLib';
 import St from 'gi://St';
 
 import { getDistanceSqr } from './geom.js';
@@ -92,11 +91,7 @@ export class Animator {
 
     _cancelEnd() {
         if (this._endId !== null) {
-            try {
-                GLib.source_remove(this._endId);
-            } catch {
-                /* already fired */
-            }
+            this._signals.cancelTimer(this._endId);
             this._endId = null;
         }
     }
