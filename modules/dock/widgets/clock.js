@@ -3,7 +3,7 @@
 // style only, fixed palette (no style dropdowns or theme-color settings).
 // The widget replaces the app icon; redrawn only when the minute changes.
 
-import Cairo from 'gi://Cairo';
+import Cairo from 'gi://cairo';
 import GObject from 'gi://GObject';
 import St from 'gi://St';
 

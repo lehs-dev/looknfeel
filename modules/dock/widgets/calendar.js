@@ -2,7 +2,7 @@
 // dash2dock-lite's apps/calendar.js by icedman (GPL-2.0-or-later). Fixed
 // look (upstream has no styles for it). Redrawn only when the day changes.
 
-import Cairo from 'gi://Cairo';
+import Cairo from 'gi://cairo';
 import GObject from 'gi://GObject';
 import St from 'gi://St';
 
